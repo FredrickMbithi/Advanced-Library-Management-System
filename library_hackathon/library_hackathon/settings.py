@@ -1,8 +1,8 @@
 """
 Django settings for library_hackathon project.
 
-For production deployment, set the following environment variables:
-- DJANGO_SECRET_KEY: A secure random string
+Environment Variables (Required for Production):
+- DJANGO_SECRET_KEY: Cryptographically secure random string (min 50 chars)
 - DJANGO_DEBUG: Set to 'False' for production
 - DJANGO_ALLOWED_HOSTS: Comma-separated list of allowed hosts
 """
@@ -13,16 +13,23 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY',
-    'django-insecure-dev-only-key-replace-in-production'
-)
+# Security Configuration
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes'):
+        SECRET_KEY = 'django-insecure-dev-only-not-for-production'
+    else:
+        raise ValueError(
+            'DJANGO_SECRET_KEY environment variable is required in production'
+        )
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [
+    host.strip() for host in 
+    os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if host.strip()
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -104,17 +111,132 @@ STATIC_URL = 'static/'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Django REST Framework settings
+# =============================================================================
+# Security Settings
+# =============================================================================
+
+# HTTPS/SSL Settings (Enable in production behind HTTPS proxy)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else None
+SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+
+# Cookie Security
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Security Headers
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# HSTS Settings (Enable only when HTTPS is confirmed working)
+if not DEBUG:
+    SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_HSTS_SECONDS', '0'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+    SECURE_HSTS_PRELOAD = SECURE_HSTS_SECONDS > 0
+
+# Content Security Policy (Basic)
+CSP_DEFAULT_SRC = ("'self'",) if not DEBUG else None
+
+# =============================================================================
+# Django REST Framework Settings
+# =============================================================================
+
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+    # Authentication
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ],
+    
+    # Permissions - IsAuthenticatedOrReadOnly allows safe methods without auth
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    
+    # Throttling (Rate Limiting)
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+    
+    # Renderers
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+    ] + (['rest_framework.renderers.BrowsableAPIRenderer'] if DEBUG else []),
+    
+    # Pagination
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    
+    # Exception handling
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    
+    # Input parsing
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
     ],
 }
 
-# Library-specific settings
-FINE_PER_DAY = 1.00  # $1 per day late
-MAX_FINE_BEFORE_CHECKOUT_BLOCKED = 50.00  # Block checkout if fine > $50
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'security_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'logs' / 'security.log',
+            'formatter': 'verbose',
+        } if not DEBUG else {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'django.security': {
+            'handlers': ['console'] if DEBUG else ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+    },
+}
+
+# =============================================================================
+# Application Settings
+# =============================================================================
+
+# Fine calculation
+FINE_PER_DAY = float(os.environ.get('LIBRARY_FINE_PER_DAY', '1.00'))
+MAX_FINE_BEFORE_CHECKOUT_BLOCKED = float(
+    os.environ.get('LIBRARY_MAX_FINE_CHECKOUT_BLOCK', '50.00')
+)

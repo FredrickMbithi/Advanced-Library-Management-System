@@ -143,21 +143,77 @@ curl "http://localhost:8000/api/fines/?user_id=1"
 - Digital items support concurrent access (configurable limit)
 - Fines accrue at $1 per day overdue (configurable)
 
+## Security
+
+This application implements multiple security layers:
+
+### Authentication and Authorization
+- Session-based authentication with secure cookies
+- Read-only access for unauthenticated users
+- Full CRUD requires authentication
+
+### Rate Limiting
+- Anonymous users: 100 requests/hour
+- Authenticated users: 1000 requests/hour
+
+### Input Validation
+- All text inputs are sanitized to prevent XSS attacks
+- Script tag detection and blocking
+- ISBN format validation
+- Positive integer validation for numeric fields
+
+### Security Headers (Production)
+- HTTPS redirect enforcement
+- HTTP Strict Transport Security (HSTS)
+- X-Frame-Options: DENY (Clickjacking protection)
+- X-Content-Type-Options: nosniff
+- XSS filter enabled
+- Secure session and CSRF cookies
+
+### Additional Protections
+- CSRF protection on all state-changing operations
+- SQL injection prevention via Django ORM
+- Security event logging
+
 ## Configuration
 
-Environment variables for production deployment:
+### Environment Variables (Required for Production)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DJANGO_SECRET_KEY` | Cryptographically secure random string (min 50 chars) | Yes |
+| `DJANGO_DEBUG` | Set to `False` for production | Yes |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts | Yes |
+| `DJANGO_SECURE_SSL_REDIRECT` | Set to `True` behind HTTPS proxy | Recommended |
+| `DJANGO_HSTS_SECONDS` | HSTS duration in seconds (e.g., 31536000) | Recommended |
+
+### Application Settings
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DJANGO_SECRET_KEY` | Secret key for cryptographic signing | Development key |
-| `DJANGO_DEBUG` | Enable debug mode | `True` |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts | `localhost,127.0.0.1` |
+| `LIBRARY_FINE_PER_DAY` | Daily late fee in dollars | `1.00` |
+| `LIBRARY_MAX_FINE_CHECKOUT_BLOCK` | Maximum unpaid fines before blocking | `50.00` |
+
+### Generate Secret Key
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
 ## Testing
 
 ```bash
 python manage.py test
 ```
+
+## Deployment Checklist
+
+- [ ] Set `DJANGO_SECRET_KEY` to a secure random value
+- [ ] Set `DJANGO_DEBUG=False`
+- [ ] Configure `DJANGO_ALLOWED_HOSTS` with production domain
+- [ ] Enable `DJANGO_SECURE_SSL_REDIRECT=True` behind HTTPS
+- [ ] Set `DJANGO_HSTS_SECONDS=31536000` after confirming HTTPS works
+- [ ] Configure production database (PostgreSQL recommended)
+- [ ] Set up log rotation for security logs
 
 ## License
 

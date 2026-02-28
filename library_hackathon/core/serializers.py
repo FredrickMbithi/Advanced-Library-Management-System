@@ -1,5 +1,5 @@
 """
-core/serializers.py - Data Validation & Transformation
+core/serializers.py - Data Validation and Transformation
 
 Serializers handle the conversion between Python objects and JSON,
 as well as input validation for the API endpoints.
@@ -19,6 +19,12 @@ from datetime import timedelta
 
 from .models import LibraryItem, Transaction, UserProfile
 from .logic.calculator import FineCalculator
+from .validators import (
+    sanitize_string,
+    validate_no_script_tags,
+    validate_isbn,
+    validate_positive_integer,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -69,8 +75,37 @@ class LibraryItemSerializer(serializers.ModelSerializer):
     def get_item_type_display(self, obj) -> str:
         return obj.get_item_type_display()
     
+    def validate_title(self, value):
+        """Sanitize and validate title."""
+        validate_no_script_tags(value)
+        return sanitize_string(value, max_length=255)
+    
+    def validate_author(self, value):
+        """Sanitize and validate author."""
+        validate_no_script_tags(value)
+        return sanitize_string(value, max_length=255)
+    
+    def validate_genre(self, value):
+        """Sanitize and validate genre."""
+        validate_no_script_tags(value)
+        return sanitize_string(value, max_length=100)
+    
+    def validate_isbn(self, value):
+        """Validate ISBN format."""
+        if value:
+            validate_isbn(value)
+        return value
+    
+    def validate_pages(self, value):
+        """Validate pages is non-negative."""
+        return validate_positive_integer(value, 'Pages')
+    
+    def validate_runtime_minutes(self, value):
+        """Validate runtime is non-negative."""
+        return validate_positive_integer(value, 'Runtime')
+    
     def validate_year_published(self, value):
-        """Ensure year is reasonable."""
+        """Validate year is within acceptable range."""
         current_year = timezone.now().year
         if value < 1000 or value > current_year + 1:
             raise serializers.ValidationError(

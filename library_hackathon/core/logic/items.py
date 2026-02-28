@@ -152,7 +152,7 @@ class DVD(PhysicalItem):
         result = super().check_out(user_id, due_date)
         result['item_type'] = 'DVD'
         result['runtime_minutes'] = self._runtime_minutes
-        result['note'] = "Please return DVD in its original case"
+        result['note'] = "Return DVD in original case"
         return result
     
     def to_dict(self) -> dict:

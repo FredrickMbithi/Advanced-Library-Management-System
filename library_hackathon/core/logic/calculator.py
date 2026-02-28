@@ -153,10 +153,10 @@ class FineCalculator:
             return (
                 False,
                 f"Outstanding fines of ${total_fines} exceed the "
-                f"${self.max_fine_for_checkout} limit. Please pay your fines."
+                f"${self.max_fine_for_checkout} limit. Payment required before checkout."
             )
         
-        return (True, "User is in good standing")
+        return (True, "Account in good standing")
     
     def pay_fine(self, transaction_id: int, amount: Decimal) -> dict:
         """
