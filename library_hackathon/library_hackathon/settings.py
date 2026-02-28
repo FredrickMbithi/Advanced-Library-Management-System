@@ -76,10 +76,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'library_hackathon.wsgi.application'
 
 # Database
+# Use data/ directory for Docker volume persistence
+DB_PATH = os.environ.get('DJANGO_DB_PATH', str(BASE_DIR / 'data' / 'db.sqlite3'))
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_PATH,
     }
 }
 

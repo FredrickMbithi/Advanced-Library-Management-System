@@ -110,6 +110,36 @@ python manage.py runserver
 
 The API will be available at `http://localhost:8000/api/`.
 
+## Docker
+
+### Quick Start
+```bash
+docker compose up -d
+```
+
+The API will be available at `http://localhost:8000/api/`.
+
+### Build and Run Manually
+```bash
+docker build -t library-management .
+docker run -p 8000:8000 \
+  -e DJANGO_SECRET_KEY='your-secret-key-here' \
+  -e DJANGO_DEBUG=False \
+  library-management
+```
+
+### Production Deployment
+```bash
+docker compose up -d --build
+```
+
+Environment variables can be set in a `.env` file or passed directly:
+```bash
+DJANGO_SECRET_KEY=your-production-secret-key
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=yourdomain.com
+```
+
 ## Usage Examples
 
 ### Checkout an Item
