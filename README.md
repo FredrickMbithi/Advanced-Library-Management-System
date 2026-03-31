@@ -9,7 +9,7 @@ A production-grade Django REST Framework application demonstrating domain-driven
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
 - [Core Features](#core-features)
@@ -68,9 +68,9 @@ This system is built around **Domain-Driven Design (DDD)** principles with a cle
 
 ---
 
-## 🚀 Core Features
+## Core Features
 
-### 📚 Polymorphic Catalog System
+### Polymorphic Catalog System
 
 The catalog implements **multi-table inheritance** with a concrete base class:
 
@@ -92,7 +92,7 @@ Custom \`User\` model with domain-specific roles:
 
 Permissions are implemented as **reusable DRF permission classes**, not hardcoded checks in views.
 
-### 📖 State-Based Loan Lifecycle
+### State-Based Loan Lifecycle
 
 Loans use **derived state** rather than storing status fields:
 
@@ -108,7 +108,7 @@ def is_overdue(self) -> bool:
 - Update anomalies when changing state
 - Need for database migrations when adding new states
 
-### 💰 Fine Calculation Service
+### Fine Calculation Service
 
 Fines are computed on-demand by a **stateless domain service**:
 
@@ -129,7 +129,7 @@ class FineCalculator:
 - Calculation is cheap and policy can be changed retroactively
 - Subclassing allows different rate policies (student discounts, etc.)
 
-### 🔍 Advanced Filtering & Search
+### Advanced Filtering & Search
 
 - Django-filter integration for declarative filtering
 - Full-text search on titles and authors
@@ -167,7 +167,7 @@ class FineCalculator:
 
 ---
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 ### Backend
 - **Django 4.2**: Web framework
@@ -187,7 +187,7 @@ class FineCalculator:
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10 or higher
@@ -240,7 +240,7 @@ For detailed setup instructions, see [GETTING_STARTED.md](GETTING_STARTED.md).
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 library-management-system/
@@ -291,7 +291,7 @@ Cross-context communication happens through:
 
 ---
 
-## 🔑 Key Design Decisions
+## Key Design Decisions
 
 ### 1. Concrete Base Class for Polymorphism
 
@@ -395,7 +395,7 @@ class Meta:
 
 ---
 
-## 🧪 Testing Strategy
+## Testing Strategy
 
 ### Coverage Overview
 
@@ -547,7 +547,7 @@ This project prioritizes **"make it right"** by emphasizing clean architecture a
 
 ---
 
-## 📚 Additional Documentation
+## Additional Documentation
 
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** – Step-by-step setup guide
 - **[API_EXAMPLES.md](API_EXAMPLES.md)** – Complete API reference with curl examples
@@ -557,7 +557,7 @@ This project prioritizes **"make it right"** by emphasizing clean architecture a
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
